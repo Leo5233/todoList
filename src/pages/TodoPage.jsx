@@ -1,69 +1,103 @@
 import { Footer, Header, TodoCollection, TodoInput } from 'components';
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getTodo, createTodo, patchTodo, deleteTodo} from '../api/todos'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
-const dummyTodos = [
-  {
-    title: 'Learn react-router',
-    isDone: true,
-    id: 1,
-  },
-  {
-    title: 'Learn to create custom hooks',
-    isDone: false,
-    id: 2,
-  },
-  {
-    title: 'Learn to use context',
-    isDone: true,
-    id: 3,
-  },
-  {
-    title: 'Learn to implement auth',
-    isDone: false,
-    id: 4,
-  },
-];
 
 const TodoPage = () => {
   const [inputValue, setInputValue] = useState('')
-  const [todos, setTodos] = useState(dummyTodos)
+  const [todos, setTodos] = useState([])
+  const navigate = useNavigate()
+  const { isAuthenticated, currentMember } = useAuth() 
+
+  useEffect(()=>{
+    if(!isAuthenticated){
+      navigate('/login')
+    }
+  }, [navigate, isAuthenticated])
+
+  useEffect(() => {
+    const getTodoAsync = async () => {
+      try{
+        const todos = await getTodo();
+        setTodos(todos.map(todo =>{
+          return (
+            {...todo, isEdit: false}
+          )
+        }))
+      } catch(error){
+        console.error(error)
+      }
+    }
+  getTodoAsync()
+  }, [])
+
   const handleChange = (value) => {
     setInputValue(value)
 
   }
-  const handleAdd = () => {
+  const handleAdd = async() => {
     if (inputValue.length === 0){
       return
     }
-    setTodos((prevTodos) => {
-      return [
-        ...prevTodos,
-        {
-          id: Math.random() * 100,
-          title: inputValue,
-          isDone: false
-        }
-      ]
-    })
-    setInputValue("")
-  }
-  const handleKeyDown = () => {
+    try{
+      const data = await createTodo(
+        {title: inputValue,
+        isDone: false}
+      )
+      setTodos((prevTodos) => {
+        return [
+          ...prevTodos,
+          {
+            id: data.id,
+            title: data.title,
+            isDone: data.isDone,
+            isEdit: false
+          }
+        ]
+      })
+      setInputValue("")
+    } catch(error){
+        console.error(error)
+     }
+}
+
+  const handleKeyDown = async() => {
     if (inputValue.length === 0){
       return
     }
-    setTodos((prevTodos) => {
-      return [
-        ...prevTodos,
-        {
-          id: Math.random() * 100,
-          title: inputValue,
-          isDone: false
-        }
-      ]
-    })
+    try{
+      const data = await createTodo(
+        {title: inputValue,
+        isDone: false}
+      )
+      console.log('data', data)
+      setTodos((prevTodos) => {
+        return [
+          ...prevTodos,
+          {
+            id: data.id,
+            title: data.title,
+            isDone: data.isDone,
+            isEdit: false
+          }
+        ]
+      })
+      setInputValue("")
+    } catch(error){
+        console.error(error)
+    }
     setInputValue("")
   }
-  const handleToggleDone = (id) => {
+
+  const handleToggleDone = async (id) => {
+    try{
+      const currentTodo = todos.find((todo) => todo.id===id)
+      await patchTodo({id, isDone: !currentTodo.isDone})
+    } catch(error){
+      console.error(error)
+    }
     setTodos(todos.map(todo => {
       if (todo.id === id){
         return {...todo, isDone: !todo.isDone}
@@ -82,7 +116,13 @@ const TodoPage = () => {
       })
     })
   }
-  const handleSave = ({id, title}) => {
+
+  const handleSave = async ({id, title}) => {
+    try{
+      await patchTodo({id, title})
+    } catch(error){
+      console.error(error)
+    }  
     setTodos(todos.map( todo => {
       if (id === todo.id){
         return {...todo, title, isEdit: false}
@@ -90,13 +130,21 @@ const TodoPage = () => {
       return todo
     }))
   }
-  const handleDelete = (id) => {
+
+  const handleDelete = async (id) => {
+    try{
+      await deleteTodo(id)
+    } catch(error){
+      console.error(error)
+    }  
     setTodos(todos.filter(todo => todo.id !== id))
   }
+
+
   return (
     <div>
       TodoPage
-      <Header />
+      <Header username={currentMember?.name}/> 
       <TodoInput 
         onChange={handleChange} 
         inputValue={inputValue} 
