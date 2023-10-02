@@ -4,6 +4,7 @@ import { LoginPage, TodoPage, SignUpPage, HomePage } from 'pages';
 import { AuthProvider} from './contexts/AuthContext'
 
 const basename = process.env.PUBLIC_URL //指向根目錄的.env檔
+console.log(basename)
 
 function App() {
   return (
