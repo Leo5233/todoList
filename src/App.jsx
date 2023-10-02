@@ -3,9 +3,11 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { LoginPage, TodoPage, SignUpPage, HomePage } from 'pages';
 import { AuthProvider} from './contexts/AuthContext'
 
+const basename = process.env.PUBLIC_URL //指向根目錄的.env檔
+
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <AuthProvider>
         <Routes>
           <Route path="login" element={<LoginPage />} />
